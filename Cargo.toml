@@ -13,3 +13,10 @@ members = [
     "examples/openapi_attributes",
     "examples/raw_identifiers",
 ]
+
+[patch.crates-io]
+rocket = { git = "https://github.com/SergioBenitez/Rocket/", rev = "26a3f00" }
+rocket_http = { git = "https://github.com/SergioBenitez/Rocket/", rev = "26a3f00" }
+rocket_db_pools = { git = "https://github.com/SergioBenitez/Rocket/", rev = "26a3f00" }
+rocket_sync_db_pools = { git = "https://github.com/SergioBenitez/Rocket/", rev = "26a3f00" }
+rocket_dyn_templates = { git = "https://github.com/SergioBenitez/Rocket/", rev = "26a3f00" }
