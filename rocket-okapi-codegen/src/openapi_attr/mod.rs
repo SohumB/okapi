@@ -9,10 +9,10 @@ use quote::quote;
 use quote::ToTokens;
 use rocket_http::Method;
 use std::collections::BTreeMap as Map;
-use syn::ext::IdentExt;
+use syn::{ext::IdentExt, visit_mut::VisitMut};
 use syn::{
     parse_macro_input, AttributeArgs, FnArg, GenericArgument, Ident, ItemFn, PathArguments,
-    PathSegment, ReturnType, Type, TypeTuple,
+    PathSegment, ReturnType, Type, TypeTuple, Lifetime
 };
 
 /// This structure documents all the properties that can be used in
@@ -133,7 +133,7 @@ fn create_route_operation_fn(
 ) -> TokenStream {
     let arg_types = get_arg_types(route_fn.sig.inputs.into_iter());
     let return_type = match route_fn.sig.output {
-        ReturnType::Type(_, ty) => type_replace_impl_trait(*ty),
+        ReturnType::Type(_, ty) => strip_lifetime_names(type_replace_impl_trait(*ty)),
         ReturnType::Default => unit_type(),
     };
 
@@ -439,10 +439,24 @@ fn get_arg_types(args: impl Iterator<Item = FnArg>) -> Map<String, Type> {
                 // The `unraw()` strips the raw marker r#, if any, from the beginning of an ident.
                 // This fixed https://github.com/GREsau/okapi/issues/117
                 let name = ident.ident.unraw().into_token_stream().to_string();
-                let ty = *arg.ty;
+                let ty = strip_lifetime_names(*arg.ty);
                 result.insert(name, ty);
             }
         }
     }
     result
+}
+
+fn strip_lifetime_names(mut t: Type) -> Type {
+    struct LifetimeNameStrip;
+
+    impl VisitMut for LifetimeNameStrip {
+        fn visit_lifetime_mut(&mut self, i: &mut Lifetime) {
+            i.ident = Ident::new("_", i.span());
+        }
+    }
+
+    LifetimeNameStrip.visit_type_mut(&mut t);
+
+    t
 }
